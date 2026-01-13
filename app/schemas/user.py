@@ -12,3 +12,9 @@ class UserResponse(BaseModel):
 
     class Config:
         from_attributes = True
+
+class UserCreateRequest(BaseModel):
+    email: str
+    password: str
+    firstName: str | None = None
+    lastName: str | None = None
