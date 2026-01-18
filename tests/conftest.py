@@ -21,7 +21,7 @@ db_port = os.getenv("DATABASE_PORT", "5432")
 encoded_password = quote(db_password, safe="")
 
 # Build test database URL
-SQLALCHEMY_TEST_DATABASE_URL = f"postgresql://{db_user}:{encoded_password}@{db_host}:{db_port}/pm_tool_dev"
+SQLALCHEMY_TEST_DATABASE_URL = f"postgresql://{db_user}:{encoded_password}@{db_host}:{db_port}/pm_tool_test"
 
 engine = create_engine(SQLALCHEMY_TEST_DATABASE_URL)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
