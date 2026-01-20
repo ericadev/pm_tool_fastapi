@@ -107,6 +107,129 @@ The API will be available at `http://localhost:8000`
 - **Swagger UI**: http://localhost:8000/docs
 - **ReDoc**: http://localhost:8000/redoc
 
+### Development with Docker
+
+You can also run the application with Docker for a consistent development environment:
+
+```bash
+docker-compose up --build
+```
+
+This will:
+1. Start a PostgreSQL database container
+2. Run all database migrations automatically
+3. Start the FastAPI server on port 8000
+
+The database will be available at `localhost:5432` and the API at `http://localhost:8000`.
+
+## Deployment
+
+### Option 1: Railway (Recommended)
+
+Railway is the easiest option for deploying this FastAPI application with PostgreSQL.
+
+**Setup:**
+1. Sign up at [railway.app](https://railway.app)
+2. Connect your GitHub repository
+3. Create a new project and select "Deploy from GitHub"
+4. Select this repository
+5. Railway will automatically detect FastAPI and create a Dockerfile
+6. Add PostgreSQL service:
+   - Click "Add Service" → "PostgreSQL"
+   - Railway will configure database credentials automatically
+7. Set environment variables in Railway dashboard:
+   ```
+   JWT_SECRET_KEY=<generate-strong-secret>
+   JWT_ALGORITHM=HS256
+   JWT_ACCESS_TOKEN_EXPIRE_DAYS=7
+   CORS_ORIGINS=https://your-frontend-domain.com
+   ```
+8. Deploy!
+
+Railway will automatically:
+- Build the Docker image
+- Run database migrations
+- Start the application
+- Provide a public URL
+
+**Cost:** Railway offers a free tier with generous limits.
+
+### Option 2: Docker + Self-Hosted VPS
+
+Deploy on any VPS (DigitalOcean, AWS, Linode, etc.):
+
+**Build and Push to Registry:**
+```bash
+# Build image
+docker build -t pm-tool-backend:latest .
+
+# Tag for registry (example: Docker Hub)
+docker tag pm-tool-backend:latest yourusername/pm-tool-backend:latest
+
+# Push to registry
+docker push yourusername/pm-tool-backend:latest
+```
+
+**On VPS:**
+```bash
+# Pull image
+docker pull yourusername/pm-tool-backend:latest
+
+# Create docker-compose.yml with production settings
+docker-compose -f docker-compose.production.yml up -d
+```
+
+### Option 3: Traditional Python Deployment
+
+For a traditional VPS without Docker:
+
+```bash
+# On server
+git clone https://github.com/ericadev/pm_tool_fastapi.git
+cd pm_tool_fastapi
+python -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+
+# Run migrations
+alembic upgrade head
+
+# Start with production server (Gunicorn)
+pip install gunicorn
+gunicorn -w 4 -k uvicorn.workers.UvicornWorker app.main:app --bind 0.0.0.0:8000
+```
+
+Use a reverse proxy (Nginx) for SSL/TLS termination and load balancing.
+
+### Environment Variables for Production
+
+Ensure these are set on your deployment platform:
+
+```env
+DATABASE_USER=pm_tool_user
+DATABASE_PASSWORD=<strong-password>
+DATABASE_HOST=<database-host>
+DATABASE_PORT=5432
+DATABASE_NAME=pm_tool
+
+JWT_SECRET_KEY=<generate-with: python -c "import secrets; print(secrets.token_urlsafe(32))">
+JWT_ALGORITHM=HS256
+JWT_ACCESS_TOKEN_EXPIRE_DAYS=7
+
+CORS_ORIGINS=https://your-frontend-domain.com,https://www.your-frontend-domain.com
+```
+
+### Health Checks
+
+The application includes a root endpoint for health checks:
+
+```bash
+curl https://your-api-domain.com/
+# Response: {"message": "Hello World"}
+```
+
+This can be used by load balancers and monitoring services.
+
 ## API Endpoints
 
 ### Authentication
