@@ -14,25 +14,12 @@ load_dotenv()
 
 def get_database_url():
     """Build database URL from environment variables."""
-    # First try DATABASE_URL if it exists
+    # Railway provides DATABASE_URL directly
     db_url = os.getenv("DATABASE_URL")
     if db_url:
-        if "@" in db_url:
-            # Extract parts before the @ symbol (user:password)
-            auth_part, host_part = db_url.rsplit("@", 1)
-            scheme_auth = auth_part.split("://", 1)
-
-            if len(scheme_auth) == 2:
-                scheme, auth = scheme_auth
-                # Extract username and password
-                if ":" in auth:
-                    user, password = auth.split(":", 1)
-                    # URL encode the password to handle special characters
-                    encoded_password = quote(password, safe="")
-                    return f"{scheme}://{user}:{encoded_password}@{host_part}"
         return db_url
 
-    # Otherwise build from individual variables
+    # For local/docker development, build from individual variables
     db_user = os.getenv("DATABASE_USER", "pm_tool_user")
     db_password = os.getenv("DATABASE_PASSWORD", "your_secure_password")
     db_host = os.getenv("DATABASE_HOST", "localhost")
