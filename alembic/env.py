@@ -13,22 +13,35 @@ load_dotenv()
 
 
 def get_database_url():
-    """Get DATABASE_URL from environment, handling special characters in password."""
+    """Build database URL from environment variables."""
+    # First try DATABASE_URL if it exists
     db_url = os.getenv("DATABASE_URL")
-    if db_url and "@" in db_url:
-        # Extract parts before the @ symbol (user:password)
-        auth_part, host_part = db_url.rsplit("@", 1)
-        scheme_auth = auth_part.split("://", 1)
+    if db_url:
+        if "@" in db_url:
+            # Extract parts before the @ symbol (user:password)
+            auth_part, host_part = db_url.rsplit("@", 1)
+            scheme_auth = auth_part.split("://", 1)
 
-        if len(scheme_auth) == 2:
-            scheme, auth = scheme_auth
-            # Extract username and password
-            if ":" in auth:
-                user, password = auth.split(":", 1)
-                # URL encode the password to handle special characters
-                encoded_password = quote(password, safe="")
-                return f"{scheme}://{user}:{encoded_password}@{host_part}"
-    return db_url
+            if len(scheme_auth) == 2:
+                scheme, auth = scheme_auth
+                # Extract username and password
+                if ":" in auth:
+                    user, password = auth.split(":", 1)
+                    # URL encode the password to handle special characters
+                    encoded_password = quote(password, safe="")
+                    return f"{scheme}://{user}:{encoded_password}@{host_part}"
+        return db_url
+
+    # Otherwise build from individual variables
+    db_user = os.getenv("DATABASE_USER", "pm_tool_user")
+    db_password = os.getenv("DATABASE_PASSWORD", "your_secure_password")
+    db_host = os.getenv("DATABASE_HOST", "localhost")
+    db_port = os.getenv("DATABASE_PORT", "5432")
+    db_name = os.getenv("DATABASE_NAME", "pm_tool")
+
+    # URL encode the password to handle special characters
+    encoded_password = quote(db_password, safe="")
+    return f"postgresql://{db_user}:{encoded_password}@{db_host}:{db_port}/{db_name}"
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

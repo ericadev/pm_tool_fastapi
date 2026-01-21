@@ -1,19 +1,18 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:15-alpine
     container_name: pm_tool_db
+    env_file: .env
     environment:
-      POSTGRES_USER: ${DATABASE_USER:-pm_tool_user}
-      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-your_secure_password}
-      POSTGRES_DB: ${DATABASE_NAME:-pm_tool}
+      POSTGRES_USER: ${DATABASE_USER}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME}
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER:-pm_tool_user}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DATABASE_USER} -d ${DATABASE_NAME}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -21,12 +20,13 @@ services:
   app:
     build: .
     container_name: pm_tool_app
+    env_file: .env
     environment:
-      DATABASE_USER: ${DATABASE_USER:-pm_tool_user}
-      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-your_secure_password}
+      DATABASE_USER: ${DATABASE_USER}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
       DATABASE_HOST: db
       DATABASE_PORT: 5432
-      DATABASE_NAME: ${DATABASE_NAME:-pm_tool}
+      DATABASE_NAME: ${DATABASE_NAME}
       JWT_SECRET_KEY: ${JWT_SECRET_KEY}
       JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
       JWT_ACCESS_TOKEN_EXPIRE_DAYS: ${JWT_ACCESS_TOKEN_EXPIRE_DAYS:-7}
