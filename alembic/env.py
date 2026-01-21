@@ -38,7 +38,8 @@ def get_database_url():
         db_name = os.getenv("PGDATABASE", "postgres")
         encoded_password = quote(db_password, safe="")
         formatted_host = _format_host_for_url(db_host)
-        return f"postgresql://{db_user}:{encoded_password}@{formatted_host}:{db_port}/{db_name}"
+        # Railway requires SSL for remote connections
+        return f"postgresql://{db_user}:{encoded_password}@{formatted_host}:{db_port}/{db_name}?sslmode=require"
 
     # For local/docker development, build from individual variables
     db_user = os.getenv("DATABASE_USER", "pm_tool_user")
