@@ -1,8 +1,11 @@
 import os
+import logging
 from urllib.parse import quote
 from sqlalchemy import create_engine
 from sqlalchemy.orm import declarative_base, sessionmaker
 from dotenv import load_dotenv
+
+logger = logging.getLogger(__name__)
 
 # Load environment variables (only works outside Docker; Docker uses env_file)
 # This is a no-op in Docker but necessary for local development
@@ -54,12 +57,18 @@ def get_database_url():
 
 DATABASE_URL = get_database_url()
 if DATABASE_URL:
-    print(f"DEBUG: Connected to database: {DATABASE_URL[:60]}...")
+    logger.info(f"Database URL configured: {DATABASE_URL[:60]}...")
 else:
-    print(f"DEBUG: WARNING - No DATABASE_URL configured!")
-engine = create_engine(DATABASE_URL)
-SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-Base = declarative_base()
+    logger.warning("No DATABASE_URL configured!")
+
+try:
+    engine = create_engine(DATABASE_URL, echo=False)
+    SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+    Base = declarative_base()
+    logger.info("Database engine created successfully")
+except Exception as e:
+    logger.error(f"Failed to create database engine: {e}")
+    raise
 
 
 def get_db():
