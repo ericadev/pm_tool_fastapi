@@ -12,6 +12,16 @@ from alembic import context
 load_dotenv()
 
 
+def _format_host_for_url(host: str | None) -> str | None:
+    """Format host for use in PostgreSQL URL, handling IPv6 addresses."""
+    if host is None:
+        return None
+    # IPv6 addresses need to be wrapped in brackets
+    if ":" in host and not host.startswith("["):
+        return f"[{host}]"
+    return host
+
+
 def get_database_url():
     """Build database URL from environment variables."""
     # Railway provides DATABASE_URL directly
@@ -27,7 +37,8 @@ def get_database_url():
         db_port = os.getenv("PGPORT", "5432")
         db_name = os.getenv("PGDATABASE", "postgres")
         encoded_password = quote(db_password, safe="")
-        return f"postgresql://{db_user}:{encoded_password}@{db_host}:{db_port}/{db_name}"
+        formatted_host = _format_host_for_url(db_host)
+        return f"postgresql://{db_user}:{encoded_password}@{formatted_host}:{db_port}/{db_name}"
 
     # For local/docker development, build from individual variables
     db_user = os.getenv("DATABASE_USER", "pm_tool_user")
@@ -38,7 +49,8 @@ def get_database_url():
 
     # URL encode the password to handle special characters
     encoded_password = quote(db_password, safe="")
-    return f"postgresql://{db_user}:{encoded_password}@{db_host}:{db_port}/{db_name}"
+    formatted_host = _format_host_for_url(db_host)
+    return f"postgresql://{db_user}:{encoded_password}@{formatted_host}:{db_port}/{db_name}"
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.

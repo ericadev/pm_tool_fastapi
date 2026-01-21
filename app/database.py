@@ -8,6 +8,16 @@ from dotenv import load_dotenv
 # This is a no-op in Docker but necessary for local development
 load_dotenv()
 
+def _format_host_for_url(host: str | None) -> str | None:
+    """Format host for use in PostgreSQL URL, handling IPv6 addresses."""
+    if host is None:
+        return None
+    # IPv6 addresses need to be wrapped in brackets
+    if ":" in host and not host.startswith("["):
+        return f"[{host}]"
+    return host
+
+
 def get_database_url():
     """Build database URL from environment variables."""
     # Try DATABASE_URL first (Railway, other platforms)
@@ -25,7 +35,8 @@ def get_database_url():
         db_port = os.getenv("PGPORT", "5432")
         db_name = os.getenv("PGDATABASE", "postgres")
         encoded_password = quote(db_password, safe="")
-        return f"postgresql://{db_user}:{encoded_password}@{db_host}:{db_port}/{db_name}"
+        formatted_host = _format_host_for_url(db_host)
+        return f"postgresql://{db_user}:{encoded_password}@{formatted_host}:{db_port}/{db_name}"
 
     # Fall back to custom variables (local development)
     print(f"DEBUG: Using custom DATABASE_* variables")
@@ -37,7 +48,8 @@ def get_database_url():
 
     # URL encode the password to handle special characters
     encoded_password = quote(db_password, safe="")
-    return f"postgresql://{db_user}:{encoded_password}@{db_host}:{db_port}/{db_name}"
+    formatted_host = _format_host_for_url(db_host)
+    return f"postgresql://{db_user}:{encoded_password}@{formatted_host}:{db_port}/{db_name}"
 
 DATABASE_URL = get_database_url()
 if DATABASE_URL:
