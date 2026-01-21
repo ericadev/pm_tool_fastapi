@@ -8,29 +8,12 @@ echo "=== ENTRYPOINT START ==="
 
 echo "PORT is: $PORT"
 
-# Optional: check that required directories exist
-if [ ! -f "alembic.ini" ]; then
-  echo "ERROR: alembic.ini not found in /app. Exiting."
-  exit 1
-fi
-
 if [ ! -d "app" ]; then
   echo "ERROR: app/ directory not found. Exiting."
   exit 1
 fi
 
 echo "=== Running database migrations ==="
-alembic upgrade head || {
-  echo "ERROR: Alembic migrations failed!"
-  exit 1
-}
-
-echo "=== Listing project files for debugging ==="
-ls -R
-
+python migrate.py
 echo "=== Starting FastAPI server ==="
-exec uvicorn app.main:app \
-  --host 0.0.0.0 \
-  --port "$PORT" \
-  --reload \
-  --log-level debug
+exec uvicorn app.main:app --host 0.0.0.0 --port "$PORT"
