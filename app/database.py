@@ -14,6 +14,16 @@ def get_database_url():
     if os.getenv("DATABASE_URL"):
         return os.getenv("DATABASE_URL")
 
+    # Railway also provides PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE
+    if os.getenv("PGHOST"):
+        db_user = os.getenv("PGUSER", "postgres")
+        db_password = os.getenv("PGPASSWORD", "")
+        db_host = os.getenv("PGHOST", "localhost")
+        db_port = os.getenv("PGPORT", "5432")
+        db_name = os.getenv("PGDATABASE", "postgres")
+        encoded_password = quote(db_password, safe="")
+        return f"postgresql://{db_user}:{encoded_password}@{db_host}:{db_port}/{db_name}"
+
     # For local/docker development, build from individual variables
     db_user = os.getenv("DATABASE_USER", "pm_tool_user")
     db_password = os.getenv("DATABASE_PASSWORD", "your_secure_password")
