@@ -10,21 +10,25 @@ load_dotenv()
 
 def get_database_url():
     """Build database URL from environment variables."""
-    # Railway provides DATABASE_URL directly
-    if os.getenv("DATABASE_URL"):
-        return os.getenv("DATABASE_URL")
+    # Try DATABASE_URL first (Railway, other platforms)
+    db_url = os.getenv("DATABASE_URL")
+    if db_url:
+        print(f"DEBUG: Using DATABASE_URL from environment")
+        return db_url
 
-    # Railway also provides PGHOST, PGPORT, PGUSER, PGPASSWORD, PGDATABASE
+    # Try PGHOST (Railway PostgreSQL plugin format)
     if os.getenv("PGHOST"):
+        print(f"DEBUG: Using PGHOST/PGPORT format")
         db_user = os.getenv("PGUSER", "postgres")
         db_password = os.getenv("PGPASSWORD", "")
-        db_host = os.getenv("PGHOST", "localhost")
+        db_host = os.getenv("PGHOST")
         db_port = os.getenv("PGPORT", "5432")
         db_name = os.getenv("PGDATABASE", "postgres")
         encoded_password = quote(db_password, safe="")
         return f"postgresql://{db_user}:{encoded_password}@{db_host}:{db_port}/{db_name}"
 
-    # For local/docker development, build from individual variables
+    # Fall back to custom variables (local development)
+    print(f"DEBUG: Using custom DATABASE_* variables")
     db_user = os.getenv("DATABASE_USER", "pm_tool_user")
     db_password = os.getenv("DATABASE_PASSWORD", "your_secure_password")
     db_host = os.getenv("DATABASE_HOST", "localhost")
@@ -36,7 +40,10 @@ def get_database_url():
     return f"postgresql://{db_user}:{encoded_password}@{db_host}:{db_port}/{db_name}"
 
 DATABASE_URL = get_database_url()
-print(f"DEBUG: Database URL configured: {DATABASE_URL[:50]}..." if DATABASE_URL else "DEBUG: No DATABASE_URL")
+if DATABASE_URL:
+    print(f"DEBUG: Connected to database: {DATABASE_URL[:60]}...")
+else:
+    print(f"DEBUG: WARNING - No DATABASE_URL configured!")
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 Base = declarative_base()
