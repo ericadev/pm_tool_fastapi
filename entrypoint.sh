@@ -19,4 +19,4 @@ fi
 echo "=== Running database migrations ===" >&2
 python migrate.py
 echo "=== Starting FastAPI server ===" >&2
-exec uvicorn app.main:app --host 0.0.0.0 --port "$PORT" --proxy-headers
+exec uvicorn app.main:app --host 0.0.0.0 --port "$PORT" --proxy-headers --forwarded-allow-ips="*"
