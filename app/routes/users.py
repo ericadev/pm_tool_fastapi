@@ -5,7 +5,7 @@ import uuid
 from app.models import User
 from app.database import get_db
 from app.schemas.user import UserResponse, UserCreateRequest
-from app.schemas.auth import LoginRequest, TokenResponse
+from app.schemas.auth import LoginRequest, LoginResponse
 from app.utils.security import hash_password, verify_password
 from app.utils.jwt import create_access_token
 
@@ -50,7 +50,7 @@ def create_user(user: UserCreateRequest, db: Session = Depends(get_db)):
     return _user_to_response(db_user)
 
 
-@router.post("/login", response_model=TokenResponse, status_code=status.HTTP_200_OK)
+@router.post("/login", response_model=LoginResponse, status_code=status.HTTP_200_OK)
 def login(credentials: LoginRequest, db: Session = Depends(get_db)):
     """Authenticate user and return JWT token."""
     user = db.query(User).filter(User.email == credentials.email).first()
@@ -62,4 +62,4 @@ def login(credentials: LoginRequest, db: Session = Depends(get_db)):
         )
 
     access_token = create_access_token(user.id)
-    return TokenResponse(access_token=access_token, token_type="bearer")
+    return LoginResponse(access_token=access_token, id=user.id, email=user.email, firstName=user.firstName, lastName=user.lastName, avatar=user.avatar)

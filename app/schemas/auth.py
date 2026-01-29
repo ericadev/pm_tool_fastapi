@@ -9,3 +9,11 @@ class LoginRequest(BaseModel):
 class TokenResponse(BaseModel):
     access_token: str
     token_type: str
+
+class LoginResponse(BaseModel):
+    access_token: str
+    id: str
+    email: str
+    firstName: str | None
+    lastName: str | None
+    avatar: str | None
