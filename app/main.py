@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 import os
 import logging
 from app.routes.projects import router as projects_router
@@ -24,21 +25,18 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.options("/{path:path}")
+async def options_handler(path: str):
+    return Response(status_code=204)
+
 
 @app.on_event("startup")
 async def startup_event():
     logger.info("Application startup - FastAPI app initialized")
 
-
 @app.on_event("shutdown")
 async def shutdown_event():
     logger.info("Application shutdown")
-
-
-@app.get("/")
-def read_root():
-    return {"message": "Hello World"}
-
 
 app.include_router(projects_router, prefix="/projects", tags=["projects"])
 app.include_router(users_router, prefix="/users", tags=["users"])
