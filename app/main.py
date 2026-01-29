@@ -1,4 +1,4 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 import os
@@ -26,8 +26,14 @@ app.add_middleware(
 )
 
 @app.options("/{path:path}")
-async def options_handler(path: str):
-    return Response(status_code=204)
+async def options_handler(request: Request, path: str):
+    headers = {
+        "Access-Control-Allow-Origin": request.headers.get("origin", "*"),
+        "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+        "Access-Control-Allow-Headers": request.headers.get("access-control-request-headers", "Content-Type"),
+        "Access-Control-Allow-Credentials": "true",
+    }
+    return Response(status_code=204, headers=headers)
 
 
 @app.on_event("startup")
