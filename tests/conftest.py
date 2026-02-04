@@ -1,8 +1,9 @@
 import os
 import pytest
 from urllib.parse import quote
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.exc import ProgrammingError
 from fastapi.testclient import TestClient
 from dotenv import load_dotenv
 
@@ -22,6 +23,29 @@ encoded_password = quote(db_password, safe="")
 
 # Build test database URL
 SQLALCHEMY_TEST_DATABASE_URL = f"postgresql://{db_user}:{encoded_password}@{db_host}:{db_port}/pm_tool_test"
+
+# Create database if it doesn't exist
+def create_test_database():
+    """Create the test database if it doesn't exist."""
+    # Connect to postgres database first
+    default_engine = create_engine(
+        f"postgresql://{db_user}:{encoded_password}@{db_host}:{db_port}/postgres",
+        isolation_level="AUTOCOMMIT"
+    )
+
+    with default_engine.connect() as conn:
+        try:
+            conn.execute(text("CREATE DATABASE pm_tool_test"))
+        except ProgrammingError:
+            # Database already exists
+            pass
+        finally:
+            conn.close()
+
+    default_engine.dispose()
+
+# Create test database
+create_test_database()
 
 engine = create_engine(SQLALCHEMY_TEST_DATABASE_URL)
 TestingSessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
