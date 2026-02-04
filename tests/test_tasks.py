@@ -198,16 +198,28 @@ class TestTaskRetrieval:
         task_id = task_response.json()["id"]
 
         # Get the task
-        response = client.get(f"/tasks/{task_id}")
+        response = client.get(
+            f"/tasks/{task_id}",
+            headers=test_user["headers"]
+        )
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert data["id"] == task_id
         assert data["title"] == "Test Task"
 
-    def test_get_nonexistent_task(self, client):
-        """Test getting nonexistent task returns 404."""
+    def test_get_task_without_token(self, client):
+        """Test getting task without authentication returns 401 or 403."""
         response = client.get("/tasks/nonexistent-task-id")
+
+        assert response.status_code in [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN]
+
+    def test_get_nonexistent_task(self, client, test_user):
+        """Test getting nonexistent task returns 404."""
+        response = client.get(
+            "/tasks/nonexistent-task-id",
+            headers=test_user["headers"]
+        )
 
         assert response.status_code == status.HTTP_404_NOT_FOUND
         assert "Task not found" in response.json()["detail"]
@@ -236,11 +248,20 @@ class TestTaskRetrieval:
             )
 
         # List tasks
-        response = client.get("/tasks/")
+        response = client.get(
+            "/tasks/",
+            headers=test_user["headers"]
+        )
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
         assert len(data) >= 3
+
+    def test_list_tasks_without_token(self, client):
+        """Test listing tasks without authentication returns 401 or 403."""
+        response = client.get("/tasks/")
+
+        assert response.status_code in [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN]
 
     def test_list_tasks_filter_by_project(self, client, test_user):
         """Test listing tasks filtered by project."""
@@ -276,7 +297,10 @@ class TestTaskRetrieval:
         )
 
         # List tasks for project1
-        response = client.get(f"/tasks/?project_id={project1_id}")
+        response = client.get(
+            f"/tasks/?project_id={project1_id}",
+            headers=test_user["headers"]
+        )
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -307,7 +331,10 @@ class TestTaskRetrieval:
         )
 
         # List TODO tasks
-        response = client.get("/tasks/?status=TODO")
+        response = client.get(
+            "/tasks/?status=TODO",
+            headers=test_user["headers"]
+        )
 
         assert response.status_code == status.HTTP_200_OK
         data = response.json()
@@ -492,7 +519,10 @@ class TestTaskDeletion:
         assert response.status_code == status.HTTP_204_NO_CONTENT
 
         # Verify task is deleted
-        get_response = client.get(f"/tasks/{task_id}")
+        get_response = client.get(
+            f"/tasks/{task_id}",
+            headers=test_user["headers"]
+        )
         assert get_response.status_code == status.HTTP_404_NOT_FOUND
 
     def test_delete_nonexistent_task(self, client, test_user):

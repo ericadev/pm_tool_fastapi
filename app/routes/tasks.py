@@ -17,9 +17,10 @@ def list_tasks(
     status: str | None = None,
     assignee_id: str | None = None,
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
 ):
     """Get all tasks, optionally filtered by project, status, or assignee."""
-    query = db.query(Task)
+    query = db.query(Task).join(Project).filter(Project.ownerId == current_user.id)
 
     if project_id:
         query = query.filter(Task.projectId == project_id)
@@ -35,9 +36,13 @@ def list_tasks(
 
 
 @router.get("/{task_id}", response_model=TaskResponse)
-def get_task(task_id: str, db: Session = Depends(get_db)):
+def get_task(
+    task_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     """Get a specific task by ID."""
-    task = db.query(Task).filter(Task.id == task_id).first()
+    task = db.query(Task).join(Project).filter(Project.ownerId == current_user.id).filter(Task.id == task_id).first()
 
     if not task:
         raise HTTPException(
