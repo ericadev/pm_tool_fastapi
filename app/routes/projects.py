@@ -11,8 +11,11 @@ router = APIRouter()
 
 
 @router.get("/")
-def read_projects(db: Session = Depends(get_db)):
-    projects = db.query(Project).all()
+def read_projects(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    projects = db.query(Project).filter(Project.ownerId == current_user.id).all()
     return [ProjectResponse.model_validate(project) for project in projects]
 
 
