@@ -328,3 +328,140 @@ class TestProjectRetrieval:
         assert project["description"] is None or isinstance(project["description"], str)
         assert isinstance(project["color"], str)  # Has database default
         assert isinstance(project["icon"], str)  # Has database default
+
+
+class TestProjectDetail:
+    """Tests for getting a specific project by ID."""
+
+    def test_get_project_success(self, client, test_user):
+        """Test getting a specific project by ID."""
+        # Create a project
+        project_data = {
+            "name": "Detail Project",
+            "description": "A project for testing details",
+            "color": "#FF0000",
+            "icon": "📊"
+        }
+        create_response = client.post(
+            "/projects/",
+            json=project_data,
+            headers=test_user["headers"]
+        )
+        assert create_response.status_code == status.HTTP_201_CREATED
+        project_id = create_response.json()["id"]
+
+        # Get the project
+        response = client.get(
+            f"/projects/{project_id}",
+            headers=test_user["headers"]
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        data = response.json()
+        assert data["id"] == project_id
+        assert data["name"] == project_data["name"]
+        assert data["description"] == project_data["description"]
+        assert data["color"] == project_data["color"]
+        assert data["icon"] == project_data["icon"]
+        assert data["ownerId"] == test_user["user"]["id"]
+
+    def test_get_project_without_token(self, client):
+        """Test getting project without authentication returns 401 or 403."""
+        response = client.get("/projects/nonexistent-project-id")
+
+        assert response.status_code in [status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN]
+
+    def test_get_nonexistent_project(self, client, test_user):
+        """Test getting nonexistent project returns 404."""
+        response = client.get(
+            "/projects/nonexistent-project-id",
+            headers=test_user["headers"]
+        )
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert "Project not found" in response.json()["detail"]
+
+    def test_get_other_users_project(self, client):
+        """Test that users cannot see other users' projects."""
+        # Create first user and project
+        user1_data = {
+            "email": "user1_detail@test.com",
+            "password": "password123"
+        }
+        user1_response = client.post("/users/", json=user1_data)
+        user1_id = user1_response.json()["id"]
+
+        # Login as user1
+        login1 = client.post("/users/login", json={
+            "email": user1_data["email"],
+            "password": user1_data["password"]
+        })
+        token1 = login1.json()["access_token"]
+        headers1 = {"Authorization": f"Bearer {token1}"}
+
+        # User1 creates a project
+        project_response = client.post(
+            "/projects/",
+            json={"name": "User 1 Secret Project"},
+            headers=headers1
+        )
+        project_id = project_response.json()["id"]
+
+        # Create second user
+        user2_data = {
+            "email": "user2_detail@test.com",
+            "password": "password123"
+        }
+        user2_response = client.post("/users/", json=user2_data)
+
+        # Login as user2
+        login2 = client.post("/users/login", json={
+            "email": user2_data["email"],
+            "password": user2_data["password"]
+        })
+        token2 = login2.json()["access_token"]
+        headers2 = {"Authorization": f"Bearer {token2}"}
+
+        # User2 tries to get User1's project - should get 404
+        response = client.get(
+            f"/projects/{project_id}",
+            headers=headers2
+        )
+
+        assert response.status_code == status.HTTP_404_NOT_FOUND
+        assert "Project not found" in response.json()["detail"]
+
+    def test_get_project_returns_all_fields(self, client, test_user):
+        """Test that get project response includes all fields."""
+        # Create a project with all fields
+        project_data = {
+            "name": "Complete Project",
+            "description": "Complete description",
+            "color": "#123ABC",
+            "icon": "🎨"
+        }
+        create_response = client.post(
+            "/projects/",
+            json=project_data,
+            headers=test_user["headers"]
+        )
+        project_id = create_response.json()["id"]
+
+        # Get the project
+        response = client.get(
+            f"/projects/{project_id}",
+            headers=test_user["headers"]
+        )
+
+        assert response.status_code == status.HTTP_200_OK
+        project = response.json()
+
+        # Verify all fields are present
+        assert "id" in project
+        assert "name" in project
+        assert "description" in project
+        assert "color" in project
+        assert "icon" in project
+        assert "ownerId" in project
+        assert "createdAt" in project
+        assert "updatedAt" in project

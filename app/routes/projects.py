@@ -19,6 +19,27 @@ def read_projects(
     return [ProjectResponse.model_validate(project) for project in projects]
 
 
+@router.get("/{project_id}", response_model=ProjectResponse)
+def get_project(
+    project_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """Get a specific project by ID. User must own the project."""
+    project = db.query(Project).filter(
+        Project.id == project_id,
+        Project.ownerId == current_user.id
+    ).first()
+
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found"
+        )
+
+    return ProjectResponse.model_validate(project)
+
+
 @router.post("/", response_model=ProjectResponse, status_code=status.HTTP_201_CREATED)
 def create_project(
     project: ProjectCreate,
