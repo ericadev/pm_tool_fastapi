@@ -109,7 +109,7 @@ def update_task(
     current_user: User = Depends(get_current_user),
 ):
     """Update a task. Requires authentication."""
-    task = db.query(Task).filter(Task.id == task_id).first()
+    task = db.query(Task).filter(Project.ownerId == current_user.id).filter(Task.id == task_id).first()
 
     if not task:
         raise HTTPException(
@@ -155,7 +155,7 @@ def delete_task(
     current_user: User = Depends(get_current_user),
 ):
     """Delete a task. Requires authentication."""
-    task = db.query(Task).filter(Task.id == task_id).first()
+    task = db.query(Task).filter(Project.ownerId == current_user.id).filter(Task.id == task_id).first()
 
     if not task:
         raise HTTPException(
